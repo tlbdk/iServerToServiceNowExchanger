@@ -8,9 +8,10 @@ using System.IO;
 using System.Net;
 using NDesk.Options;
 using ExcelLibrary.SpreadSheet;
+using SimpleLog;
 
 
-namespace HTTPFileUploader
+namespace iServerToServiceNowExchanger
 {
     class Program
     {
@@ -45,6 +46,11 @@ namespace HTTPFileUploader
             //
             /////////////////////////////////
 
+            
+            Log.SetFileListener("iServerToServiceNowExchanger.log");
+            //Log.SetLogLevel
+            Log.OSInformation();
+
             bool show_help = false;
             string UploadURL = null;
             string DownloadURL = null;
@@ -56,7 +62,7 @@ namespace HTTPFileUploader
             var p = new OptionSet() {
                 { "u|upload=", "the {URL} to upload to.",                                v => UploadURL=v},
                 { "d|download=","the {URL} to download from.",                           v => DownloadURL=v},
-                { "f|file=", "the {filepath} to use.",                               v => filepath=v},
+                { "f|file=", "the {filepath} to use.",                                   v => filepath=v},
                 { "m|merge=", "A Excel workbook to merge",                               v => mergeList.Add(v)},
                 { "dm|downloadMerge=", "A Excel workbook to download, rotate and merge", v => downloadMergeList.Add(v)},
                 { "s|split=", "A Excel workbook to split",                               v => splitList.Add(v)},
@@ -73,9 +79,10 @@ namespace HTTPFileUploader
             }
             catch (OptionException e)
             {
-                Console.Write("HTTPFileUploader: ");
+                Console.Write("iServerToServiceNowExchanger: ");
                 Console.WriteLine(e.Message);
-                Console.WriteLine("Try `HTTPFileUploader --help' for more information.");
+                Console.WriteLine("Try iServerToServiceNowExchanger --help' for more information.");
+                Log.Error("Try iServerToServiceNowExchanger --help' for more information.",e);
                 return;
             }
 
@@ -88,12 +95,14 @@ namespace HTTPFileUploader
             if (user==null ^ pass==null)
             {
                 Console.WriteLine("When using credentials, you have to specify both a username and a password.");
+                Log.Error("When using credentials, you have to specify both a username and a password.", new Exception()); //FIXME: Log without exception
                 return;
             }
 
             if (DownloadURL != null && filepath != null)
             {
                 Console.WriteLine("Downloading " + DownloadURL + " " + filepath);
+                Log.Info("Downloading " + DownloadURL + " " + filepath, new Exception()); //FIXME: Log without exception
                 downloadAndRotate(DownloadURL, filepath);
                 return;
             }
@@ -101,6 +110,7 @@ namespace HTTPFileUploader
             if (UploadURL != null && filepath != null)
             {
                 Console.WriteLine("Uploading " + UploadURL + " " + filepath);
+                Log.Info("Uploading " + UploadURL + " " + filepath, new Exception()); //FIXME: Log without exception
                 fileUpload(UploadURL, filepath);
                 return;
             }
@@ -152,9 +162,11 @@ namespace HTTPFileUploader
                 {
                     i++;
                     Console.WriteLine("Downloading " + URL + " " + dir + i + ".tmp");
+                    Log.Info("Downloading " + URL + " " + dir + i + ".tmp", new Exception()); //FIXME: Log without exception
                     if (!downloadAndRotate(URL, dir + i + ".tmp"))
                     {
                         Console.WriteLine("Error downloading "+URL+" files will not be merged.");
+                        Log.Error("Error downloading " + URL + " files will not be merged.", new Exception()); //FIXME: Log without exception
                         return;
                     }
                 }
@@ -240,16 +252,19 @@ namespace HTTPFileUploader
                         else
                         {
                             Console.WriteLine("File path invalid: " + filepath);
+                            Log.Error("File path invalid: " + filepath, new Exception()); //FIXME: Log without exception
                             break;
                         }
                     }
-                    catch (WebException)
+                    catch (WebException e)
                     {
                         Console.WriteLine("File '" + filepath + "' could not be uploaded to server. Retrying 3 times.");
+                        Log.Error("File '" + filepath + "' could not be uploaded to server. Retrying 3 times.", e);
                     }
-                    catch (UriFormatException)
+                    catch (UriFormatException e)
                     {
                         Console.WriteLine("URL invalid: " + address);
+                        Log.Error("URL invalid: " + address, e);
                         break;
                     }
                 }
@@ -277,9 +292,10 @@ namespace HTTPFileUploader
                     w.DownloadFile(downloaduri, filepath);
                     return true;
                 }
-                 catch (WebException)
+                 catch (WebException e)
                 {
                     Console.WriteLine("File '" + filepath + "' could not be downloaded from server.");
+                    Log.Error("File '" + filepath + "' could not be downloaded from server.", e);
                     return false;
                 }
             }
@@ -305,19 +321,22 @@ namespace HTTPFileUploader
                     {
                         removeFile(newFilepath); //There shouldn't be a file at newFilePath. If so, it is an error.
                         Console.WriteLine("Removed file which shouldn't be there: " + newFilepath);
+                        Log.Info("Removed file which shouldn't be there: " + newFilepath, new Exception()); //FIXME: Log without exception
                     }
                     File.Move(oldFilepath, newFilepath);
                     return true;
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
                     Console.WriteLine("Could not move file: " + oldFilepath + " to " + newFilepath);
+                    Log.Error("Could not move file: " + oldFilepath + " to " + newFilepath, e);
                     return false;
                 }
             }
             else
             {
                 Console.WriteLine("Could not move '" + oldFilepath + "' because it is locked");
+                Log.Error("Could not move '" + oldFilepath + "' because it is locked", new Exception()); //FIXME: Log without exception
                 return false;
             }
         }
@@ -331,15 +350,17 @@ namespace HTTPFileUploader
                     File.Delete(Filepath);
                     return true;
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
                     Console.WriteLine("Could not delete file: " + Filepath);
+                    Log.Error("Could not delete file: " + Filepath, e);
                     return false;
                 }
             }
             else
             {
                 Console.WriteLine("Could not delete '" + Filepath + "' because it is locked");
+                Log.Error("Could not delete '" + Filepath + "' because it is locked", new Exception()); //FIXME: Log without exception
                 return false;
             }
         }
@@ -362,12 +383,14 @@ namespace HTTPFileUploader
                 else
                 {
                     Console.WriteLine("Operation aborting because either '" + filepath + "' doesn't exist or '" + filepath + "' and '" + filepath + ".tmp' couldn't be renamed/moved");
+                    Log.Error("Operation aborting because either '" + filepath + "' doesn't exist or '" + filepath + "' and '" + filepath + ".tmp' couldn't be renamed/moved", new Exception()); //FIXME: Log without exception
                     return false;
                 }
             }
             else
             {
                 Console.WriteLine("Operation aborted because download failed. Files won't be rotated.");
+                Log.Error("Operation aborted because download failed. Files won't be rotated.", new Exception()); //FIXME: Log without exception
                 return false;
             }
         }
@@ -408,6 +431,7 @@ namespace HTTPFileUploader
                 {
                     //FIXME: Needs appropriate exception handling. How?
                     Console.WriteLine("Critical error occured when renaming/moving backup files. Filenames might now have inconsistencies.");
+                    Log.Error("Critical error occured when renaming/moving backup files. Filenames might now have inconsistencies.", new Exception()); //FIXME: Log without exception
                     break;
                 }
             }
