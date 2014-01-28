@@ -54,6 +54,8 @@ namespace iServerToServiceNowExchanger
             // Loading configuration
             NameValueCollection appSettings = ConfigurationManager.AppSettings;
             Log.SetFileListener(appSettings["logFile"]);
+            user = appSettings["username"];
+            pass = appSettings["password"];
 
             int logLevel = 0;
             try
