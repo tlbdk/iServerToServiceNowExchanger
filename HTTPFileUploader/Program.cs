@@ -9,7 +9,11 @@ using System.Net;
 using NDesk.Options;
 using ExcelLibrary.SpreadSheet;
 using SimpleLog;
+using System.Configuration;
+using System.Collections.Specialized;
 
+//NOTE: Cell widths/height are not kept when copying!
+//NOTE: Workbook-sheets are merged in the listed order.
 
 namespace iServerToServiceNowExchanger
 {
@@ -46,9 +50,47 @@ namespace iServerToServiceNowExchanger
             //
             /////////////////////////////////
 
+            /////////////////////////////////
+            // Loading configuration
+            NameValueCollection appSettings = ConfigurationManager.AppSettings;
+            Log.SetFileListener(appSettings["logFile"]);
+
+            int logLevel = 0;
+            try
+            {
+                logLevel = Int16.Parse(appSettings["logLevel"]);
+            }
+            catch (FormatException e)
+            {
+                Console.WriteLine("Can't parse the log level");
+                Log.Error("Can't parse the log level",e);
+                // logLevel defaults to 0
+            }
             
-            Log.SetFileListener("iServerToServiceNowExchanger.log");
-            //Log.SetLogLevel
+            switch (logLevel)
+            {
+                case 0:
+                    Log.SetLogLevel(SimpleLog.LogLevel.ERROR);
+                    break;
+                case 1:
+                    Log.SetLogLevel(SimpleLog.LogLevel.WARN);
+                    break;
+                case 2:
+                    Log.SetLogLevel(SimpleLog.LogLevel.INFO);
+                    break;
+                case 3:
+                    Log.SetLogLevel(SimpleLog.LogLevel.DEBUG);
+                    break;
+                case 4:
+                    Log.SetLogLevel(SimpleLog.LogLevel.TRACE);
+                    break;
+                default:
+                    Log.SetLogLevel(SimpleLog.LogLevel.ERROR);
+                    break;
+            }
+            //
+            /////////////////////////////////
+            
             Log.OSInformation();
 
             bool show_help = false;
@@ -70,7 +112,6 @@ namespace iServerToServiceNowExchanger
                 { "pass|password=", "The password to login with",                        v => pass=v}, //FIXME: Is this safe enough?
                 { "h|help",  "show this message and exit",                               v => show_help = v != null },
             };
-
             
             List<string> arguments;
             try
