@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <StartArguments>-dm https://damcodev.service-now.com/u_iserver_object_export_list.do%3fEXCEL -dm https://damcodev.service-now.com/u_iserver_relation_export_list.do%3fEXCEL -f C:\Users\Mads\Desktop\excel.xls</StartArguments>
+    <StartArguments>-u https://damcodev.service-now.com/sys_import.do%3fsysparm_import_set_tablename=u_iserver_relations&amp;sysparm_transform_after_load=true -f C:\Users\Mads\Desktop\UploadTestFile2.xls</StartArguments>
   </PropertyGroup>
 </Project>

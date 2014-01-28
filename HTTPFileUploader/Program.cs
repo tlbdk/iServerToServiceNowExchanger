@@ -277,11 +277,10 @@ namespace iServerToServiceNowExchanger
         {
             using (WebClient client = new WebClient())
             {
-                //Add Certificate here if needed.
-                //if (user != null && pass != null)
-                //{
-                //    client.Credentials = new System.Net.NetworkCredential(user, pass);
-                //}
+                if (user != null && pass != null)
+                {
+                    client.Credentials = new System.Net.NetworkCredential(user, pass);
+                }
 
                 for (int i = 0; i < 3; i++)
                 {
