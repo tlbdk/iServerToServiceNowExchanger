@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <StartArguments>-u https://damcodev.service-now.com/sys_import.do%3fsysparm_import_set_tablename=u_iserver_relations&amp;sysparm_transform_after_load=true -f C:\Users\Mads\Desktop\UploadTestFile2.xls</StartArguments>
+    <StartArguments>-s C:\Users\Mads\Desktop\ServiceNow_Merged_merged.xls -f C:\Users\Mads\Desktop\ServiceNow.xls</StartArguments>
   </PropertyGroup>
 </Project>
