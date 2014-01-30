@@ -97,10 +97,11 @@ namespace iServerToServiceNowExchanger
 
             //
             /////////////////////////////////
-            
-            Log.OSInformation();
+
+
 
             bool show_help = false;
+            bool show_examples = false;
             string uploadService = null;
             string downloadService = null;
             string filepath = null;
@@ -108,12 +109,13 @@ namespace iServerToServiceNowExchanger
             List<string> splitList = new List<string>();
 
             var p = new OptionSet() {
-                { "f|file=", "the {filepath} to use.",                                   v => filepath=v},
-                { "u|upload=", "the service to upload to.",                              v => uploadService=v},
-                { "d|download=","the service to download from.",                         v => downloadService=v},
-                { "m|merge=", "A Excel workbook to merge",                               v => mergeList.Add(v)},
-                { "s|split=", "A Excel workbook to split",                               v => splitList.Add(v)},
-                { "h|help",  "show this message and exit",                               v => show_help = v != null },
+                { "f|file=", "the {filepath} to use.",                                     v => filepath=v},
+                { "u|upload=", "the {service} to upload to.",                              v => uploadService=v},
+                { "d|download=","the {service} to download from.",                         v => downloadService=v},
+                { "m|merge=", "A {Excel workbook} to merge",                               v => mergeList.Add(v)},
+                { "s|split=", "A {Excel workbook} to split",                               v => splitList.Add(v)},
+                { "h|help",  "show this message",                                          v => show_help = v != null },
+                { "e|example",  "show examples",                                           v => show_examples = v != null }
             };
             
             List<string> arguments;
@@ -130,11 +132,19 @@ namespace iServerToServiceNowExchanger
                 return;
             }
 
-            if (show_help)
+            if (show_examples)
+            {
+                showExamples();
+                return;
+            }
+
+            if (show_help || args.Length==0)
             {
                 showHelp(p);
                 return;
             }
+
+            Log.OSInformation();
 
             if (user==null ^ pass==null)
             {
@@ -215,7 +225,13 @@ namespace iServerToServiceNowExchanger
                 List<Workbook> mergeWorkbookList = new List<Workbook>();
                 foreach (string file in mergeList)
                 {
-                    mergeWorkbookList.Add(Workbook.Load(file));
+                    //try
+                    //{
+                        mergeWorkbookList.Add(Workbook.Load(file));
+                    //}
+                    //catch (){
+
+                    //}
                 }
 
                 Workbook workbookMerged = workbookMerge(mergeWorkbookList);
@@ -248,9 +264,25 @@ namespace iServerToServiceNowExchanger
             Console.WriteLine();
             Console.WriteLine("Options:");
             p.WriteOptionDescriptions(Console.Out);
-            Console.WriteLine("You can chain the operations in this order: -d -u -m -s");
+            Console.WriteLine("\nYou can chain the operations in this order: -d -u -m -s");
             Console.WriteLine("-f can be placed anywhere and will be universal for all the operations.");
             Console.WriteLine("-m requires 2 or more paths to work.");
+        }
+
+        static void showExamples()
+        {
+            Console.WriteLine(); 
+            Console.WriteLine(" Download file from service");
+            Console.WriteLine(" -d <servicenow/iserver> -f <to file>");
+            Console.WriteLine();
+            Console.WriteLine(" Upload file to service");
+            Console.WriteLine(" -u <servicenow/iserver> -f <from file>");
+            Console.WriteLine();
+            Console.WriteLine(" Merge 2 or more Excel workbooks into one");
+            Console.WriteLine(" -m <file_1> -m <file_n> -f <to fileMerged>");
+            Console.WriteLine();
+            Console.WriteLine(" Split 1 or more Excel workbooks into 1 pr worksheet.");
+            Console.WriteLine(" -s <file_1> -s <file_n>");
         }
 
         static List<Workbook> workbookSplit(Workbook workbook)
