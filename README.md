@@ -23,8 +23,9 @@ When typing ServiceSow and iServer, it is case-insensitve.
 
 When naming the file, the extention will be stripped and be replaced by .xls as this is the only supported filetype.
 
-Show help
---help
+__Show help__
+
+	--help
 
 __Download to file__ Either type servicenow OR iserver after the -d.
 If ServiceNow is chosen, it will download the RelationsTable and the ObjectsTable by using the "to file" as directory/prefix. Afterwards, it merges the 2 tables into 1 and saves it as "to file".
@@ -73,7 +74,7 @@ This will upload the 2 files:
 	foo_ObjectsTable.xls
 	foo_RelationsTable.xls
 
-To the upload URL defined in App.config:
+To the upload URLs defined in App.config:
 
 	<?xml version="1.0" encoding="utf-8" ?>
 	<configuration>
