@@ -167,7 +167,7 @@ namespace iServerToServiceNowExchanger
                         mergeWorkbookList.Add(Workbook.Load(dir + file + STD_SERVICENOW + STD_RELATION + ".xls"));
                         mergeWorkbookList.Add(Workbook.Load(dir + file + STD_SERVICENOW + STD_OBJECT + ".xls"));
                         Workbook workbookMerged = workbookMerge(mergeWorkbookList);
-                        workbookMerged.Save(dir + file + STD_SERVICENOW + STD_MERGED + ".xls");
+                        workbookMerged.Save(dir + file + STD_MERGED + ".xls");
                     }
                 }
                 else if (downloadService.ToLower().Equals("iserver"))
@@ -183,11 +183,11 @@ namespace iServerToServiceNowExchanger
                             string postfix;
                             switch (i)
                             {
-                                case 1: postfix = STD_RELATION; break; //TODO: Check if the order is correct. Alternativly check sheet name.
+                                case 1: postfix = STD_RELATION; break;
                                 case 2: postfix = STD_OBJECT; break;
                                 default: postfix = i.ToString(); break;
                             }
-                            workbook.Save(dir + file + STD_ISERVER + STD_ISERVER_SPLITTED + postfix + ".xls");
+                            workbook.Save(dir + file + postfix + ".xls");
                         }
                     }
                 }
@@ -205,12 +205,12 @@ namespace iServerToServiceNowExchanger
 
                 if (uploadService.ToLower().Equals("servicenow"))
                 {
-                    fileUpload(appSettings["serviceNowUploadURLRelation"], dir + file + STD_ISERVER + STD_ISERVER_SPLITTED + STD_RELATION + ".xls");
-                    fileUpload(appSettings["serviceNowUploadURLObject"], dir + file + STD_ISERVER + STD_ISERVER_SPLITTED + STD_OBJECT + ".xls");
+                    fileUpload(appSettings["serviceNowUploadURLRelation"], dir + file + STD_RELATION + ".xls");
+                    fileUpload(appSettings["serviceNowUploadURLObject"], dir + file + STD_OBJECT + ".xls");
                 }
                 else if (uploadService.ToLower().Equals("iserver"))
                 {
-                    fileUpload(appSettings["iServerUploadURL"], dir + file + STD_SERVICENOW + STD_MERGED + ".xls");
+                    fileUpload(appSettings["iServerUploadURL"], dir + file + STD_MERGED + ".xls");
                 }
                 else
                 {
@@ -251,8 +251,15 @@ namespace iServerToServiceNowExchanger
                         i++;
                         String dir = Path.GetDirectoryName(filename) + @"\";
                         String file = Path.GetFileNameWithoutExtension(filename);
-                        String extension = Path.GetExtension(filename);
-                        workbook.Save(dir + file + "_" + i + "_" + workbook.Worksheets.ElementAt(0).Name + extension);
+                        String extension = Path.GetExtension(filepath);
+                        string postfix;
+                        switch (i)
+                        {
+                            case 1: postfix = STD_RELATION; break;
+                            case 2: postfix = STD_OBJECT; break;
+                            default: postfix = i.ToString(); break;
+                        }
+                        workbook.Save(dir + file + postfix + ".xls");
                     }
                 }
             }
