@@ -160,21 +160,21 @@ namespace iServerToServiceNowExchanger
 
                 if (downloadService.ToLower().Equals("servicenow"))
                 {
-                    if (downloadAndRotate(appSettings["serviceNowDownloadURLObject"], dir + file + STD_SERVICENOW + STD_OBJECT + ".xls") &&
-                        downloadAndRotate(appSettings["serviceNowDownloadURLRelation"], dir + file + STD_SERVICENOW + STD_RELATION + ".xls"))
+                    if (downloadAndRotate(appSettings["serviceNowDownloadURLObject"], dir + file + STD_OBJECT + ".xls") &&
+                        downloadAndRotate(appSettings["serviceNowDownloadURLRelation"], dir + file + STD_RELATION + ".xls"))
                     {
                         List<Workbook> mergeWorkbookList = new List<Workbook>();
-                        mergeWorkbookList.Add(Workbook.Load(dir + file + STD_SERVICENOW + STD_RELATION + ".xls"));
-                        mergeWorkbookList.Add(Workbook.Load(dir + file + STD_SERVICENOW + STD_OBJECT + ".xls"));
+                        mergeWorkbookList.Add(Workbook.Load(dir + file + STD_RELATION + ".xls"));
+                        mergeWorkbookList.Add(Workbook.Load(dir + file + STD_OBJECT + ".xls"));
                         Workbook workbookMerged = workbookMerge(mergeWorkbookList);
                         workbookMerged.Save(dir + file + STD_MERGED + ".xls");
                     }
                 }
                 else if (downloadService.ToLower().Equals("iserver"))
                 {
-                    if (downloadAndRotate(appSettings["iServerDownloadURL"], dir + file + STD_ISERVER + ".xls"))
+                    if (downloadAndRotate(appSettings["iServerDownloadURL"], dir + file + ".xls"))
                     {
-                        List<Workbook> workbookSheets = workbookSplit(Workbook.Load(dir + file + STD_ISERVER + ".xls"));
+                        List<Workbook> workbookSheets = workbookSplit(Workbook.Load(dir + file + ".xls"));
                         int i = 0;
                         foreach (Workbook workbook in workbookSheets)
                         {
@@ -210,7 +210,7 @@ namespace iServerToServiceNowExchanger
                 }
                 else if (uploadService.ToLower().Equals("iserver"))
                 {
-                    fileUpload(appSettings["iServerUploadURL"], dir + file + STD_MERGED + ".xls");
+                    fileUpload(appSettings["iServerUploadURL"], dir + file + ".xls");
                 }
                 else
                 {
