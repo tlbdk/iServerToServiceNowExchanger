@@ -17,7 +17,10 @@ The only thing to remember is to use the escape characters below when typing the
 
 Parameters
 ----------
-The parameters is typed without the "<" and ">" characters. When typing ServiceSow and iServer, it is case-insensitve.
+The parameters is typed without the "<" and ">" characters.
+
+When typing ServiceSow and iServer, it is case-insensitve.
+
 When naming the file, the extention will be stripped and be replaced by .xls as this is the only supported filetype.
 
 Show help
