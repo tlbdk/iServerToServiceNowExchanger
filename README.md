@@ -7,11 +7,12 @@ App.config
 ----------
 The config has a number of settings, most of them self-explanatory.
 The only thing to remember is to use the escape characters below when typing the URL.
-``"   &quot;
-'   &apos;
-<   &lt;
->   &gt;
-&   &amp;``
+
+	"   &quot;
+	'   &apos;
+	<   &lt;
+	>   &gt;
+	&   &amp;
 
 
 Parameters
