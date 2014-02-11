@@ -58,8 +58,11 @@ namespace iServerToServiceNowExchanger
             // Loading configuration
             NameValueCollection appSettings = ConfigurationManager.AppSettings;
             Log.SetFileListener(appSettings["logFile"]);
+            Log.SetConsoleListener(true);
             user = appSettings["username"];
             pass = appSettings["password"];
+
+            WebProxy proxy = String.IsNullOrWhiteSpace(appSettings["proxy"]) ? null : new WebProxy(appSettings["proxy"]);
 
             int logLevel = 0;
             try
@@ -68,7 +71,6 @@ namespace iServerToServiceNowExchanger
             }
             catch (FormatException e)
             {
-                Console.WriteLine("Can't parse the log level");
                 Log.Error("Can't parse the log level",e);
                 // logLevel defaults to 0
             }
@@ -98,8 +100,6 @@ namespace iServerToServiceNowExchanger
             //
             /////////////////////////////////
 
-
-
             bool show_help = false;
             bool show_examples = false;
             string uploadService = null;
@@ -109,9 +109,9 @@ namespace iServerToServiceNowExchanger
             List<string> splitList = new List<string>();
 
             var p = new OptionSet() {
-                { "f|file=", "the {filepath} to use.",                                     v => filepath=v},
-                { "u|upload=", "the {service} to upload to.",                              v => uploadService=v},
-                { "d|download=","the {service} to download from.",                         v => downloadService=v},
+                { "f|file=", "the {filepath} to use.",                                     v => filepath = v},
+                { "u|upload=", "the {service} to upload to.",                              v => uploadService = v},
+                { "d|download=","the {service} to download from.",                         v => downloadService = v},
                 { "m|merge=", "A {Excel workbook} to merge",                               v => mergeList.Add(v)},
                 { "s|split=", "A {Excel workbook} to split",                               v => splitList.Add(v)},
                 { "h|help",  "show this message",                                          v => show_help = v != null },
@@ -125,10 +125,7 @@ namespace iServerToServiceNowExchanger
             }
             catch (OptionException e)
             {
-                Console.Write("iServerToServiceNowExchanger: ");
-                Console.WriteLine(e.Message);
-                Console.WriteLine("Try iServerToServiceNowExchanger --help for more information.");
-                Log.Error("Try iServerToServiceNowExchanger --help for more information.",e);
+                Log.Error("Try iServerToServiceNowExchanger --help for more information.", e);
                 return;
             }
 
@@ -148,7 +145,6 @@ namespace iServerToServiceNowExchanger
 
             if (user==null ^ pass==null)
             {
-                Console.WriteLine("You have to specify both a username and a password.");
                 Log.Error("You have to specify both a username and a password.");
                 return;
             }
@@ -160,8 +156,8 @@ namespace iServerToServiceNowExchanger
 
                 if (downloadService.ToLower().Equals("servicenow"))
                 {
-                    if (downloadAndRotate(appSettings["serviceNowDownloadURLObject"], dir + file + STD_OBJECT + ".xls") &&
-                        downloadAndRotate(appSettings["serviceNowDownloadURLRelation"], dir + file + STD_RELATION + ".xls"))
+                    if (downloadAndRotate(appSettings["serviceNowDownloadURLObject"], dir + file + STD_OBJECT + ".xls", proxy) &&
+                        downloadAndRotate(appSettings["serviceNowDownloadURLRelation"], dir + file + STD_RELATION + ".xls", proxy))
                     {
                         List<Workbook> mergeWorkbookList = new List<Workbook>();
                         mergeWorkbookList.Add(Workbook.Load(dir + file + STD_RELATION + ".xls"));
@@ -172,7 +168,7 @@ namespace iServerToServiceNowExchanger
                 }
                 else if (downloadService.ToLower().Equals("iserver"))
                 {
-                    if (downloadAndRotate(appSettings["iServerDownloadURL"], dir + file + ".xls"))
+                    if (downloadAndRotate(appSettings["iServerDownloadURL"], dir + file + ".xls", proxy))
                     {
                         List<Workbook> workbookSheets = workbookSplit(Workbook.Load(dir + file + ".xls"));
                         int i = 0;
@@ -322,11 +318,16 @@ namespace iServerToServiceNowExchanger
             return workbookMerged;
         }
 
-        public static void fileUpload(string address, string filepath)
+        public static void fileUpload(string address, string filepath, WebProxy wp = null)
         {
             Log.Trace("Uploading {0} {1}", address, filepath);
             using (WebClient client = new WebClient())
             {
+                if (wp != null)
+                {
+                    client.Proxy = wp;
+                }
+
                 if (user != null && pass != null)
                 {
                     client.Credentials = new System.Net.NetworkCredential(user, pass);
@@ -341,25 +342,22 @@ namespace iServerToServiceNowExchanger
                     }
                     else
                     {
-                        Console.WriteLine("File path invalid: " + filepath);
                         Log.Error("File path invalid: {0}",filepath);
                         return;
                     }
                 }
                 catch (WebException e)
                 {
-                    Console.WriteLine("File '" + filepath + "' could not be uploaded to server. Retrying 3 times.");
                     Log.Error("File '" + filepath + "' could not be uploaded to server. Retrying 3 times.", e);
                 }
                 catch (UriFormatException e)
                 {
-                    Console.WriteLine("URL invalid: " + address);
                     Log.Error("URL invalid: " + address, e);
                 }
             }
         }
 
-        public static bool downloadToFile(string url, string filepath)
+        public static bool downloadToFile(string url, string filepath, WebProxy wp = null)
         {
             Log.Trace("Downloading {0} to {1}", url, filepath);
             filepath += ".tmp";
@@ -379,23 +377,26 @@ namespace iServerToServiceNowExchanger
                 return false;
             }
 
-            using (var w = new GZipWebClient())
+            using (var client = new GZipWebClient())
             {
+                if (wp != null)
+                {
+                    client.Proxy = wp;
+                }
+
                 if (user != null && pass != null)
                 {
-                    w.Credentials = new System.Net.NetworkCredential(user, pass);
+                    client.Credentials = new System.Net.NetworkCredential(user, pass);
                 }
 
                 try
                 {
-                    w.DownloadFile(downloaduri, filepath);
-                    Console.WriteLine("Downloaded " + url + " to " + filepath);
+                    client.DownloadFile(downloaduri, filepath);
                     Log.Trace("Downloaded {0} to {1}", url, filepath);
                     return true;
                 }
                  catch (WebException e)
                 {
-                    Console.WriteLine("File '" + filepath + "' could not be downloaded from server.");
                     Log.Error("File '" + filepath + "' could not be downloaded from server.", e);
                     return false;
                 }
@@ -421,22 +422,19 @@ namespace iServerToServiceNowExchanger
                     if (File.Exists(newfilepath))
                     {
                         removeFile(newfilepath); //There shouldn't be a file at newfilepath. If so, it is an error.
-                        Console.WriteLine("Removed file which shouldn't be there: " + newfilepath);
                         Log.Info("Removed file which shouldn't be there: {0}", newfilepath);
                     }
                     File.Move(oldfilepath, newfilepath);
                     return true;
                 }
-                catch (Exception e)
+                catch (IOException ex)
                 {
-                    Console.WriteLine("Could not move file: " + oldfilepath + " to " + newfilepath);
-                    Log.Error("Could not move file: {0} to {1}", oldfilepath, newfilepath);
+                    Log.Error("Could not move file: {0} to {1} : {2}", oldfilepath, newfilepath, ex.Message);
                     return false;
                 }
             }
             else
             {
-                Console.WriteLine("Could not move '" + oldfilepath + "' because it is locked");
                 Log.Error("Could not move '{0}' because it is locked", oldfilepath);
                 return false;
             }
@@ -453,22 +451,20 @@ namespace iServerToServiceNowExchanger
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Could not delete file: " + filepath);
                     Log.Error("Could not delete file: " + filepath, e);
                     return false;
                 }
             }
             else
             {
-                Console.WriteLine("Could not delete '" + filepath + "' because it is locked");
                 Log.Error("Could not delete '{0}' because it is locked", filepath);
                 return false;
             }
         }
 
-        private static bool downloadAndRotate(string url, string filepath)
+        private static bool downloadAndRotate(string url, string filepath, WebProxy wp = null)
         {
-            if (downloadToFile(url, filepath))
+            if (downloadToFile(url, filepath, wp))
             {
                 bool ready = true;
                 if (File.Exists(filepath))
@@ -483,14 +479,12 @@ namespace iServerToServiceNowExchanger
                 }
                 else
                 {
-                    Console.WriteLine("Operation aborting because either '" + filepath + "' doesn't exist or '" + filepath + "' and '" + filepath + ".tmp' couldn't be renamed/moved");
                     Log.Error("Operation aborting because either '{0}' doesn't exist or '{0}' and '{0}.tmp' couldn't be renamed/moved", filepath);
                     return false;
                 }
             }
             else
             {
-                Console.WriteLine("Operation aborted because download failed. Files won't be rotated.");
                 Log.Error("Operation aborted because download failed. Files won't be rotated.");
                 return false;
             }
@@ -531,7 +525,6 @@ namespace iServerToServiceNowExchanger
                 catch (Exception)
                 {
                     //FIXME: Needs appropriate exception handling. How?
-                    Console.WriteLine("Critical error occured when renaming/moving backup files. Filenames might now have inconsistencies.");
                     Log.Error("Critical error occured when renaming/moving backup files. Filenames might now have inconsistencies.");
                     break;
                 }
