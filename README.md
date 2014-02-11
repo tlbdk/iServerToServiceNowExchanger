@@ -39,17 +39,6 @@ if iServer is chosen, it will just upload the file.
 
 	-u <servicenow/iserver> -f <from file>
 
-__Merge files__
-Manually merge multiple files by listing them as: -m "1" -m "2" ... -m "n" -f "to file". The sheets will be in the same order as the files.
-
-	-m <file_1> -m <file_n> -f <to fileMerged>
-
-__Split__
-Split 1 or more files into 1 pr worksheet (adds worksheet name as postfix automatically).
-
-	-s <file_1> -s <file_n>
-
-
 Examples
 --------
 
