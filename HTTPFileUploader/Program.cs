@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Net;
 using NDesk.Options;
-using ExcelLibrary.SpreadSheet;
 using SimpleLog;
 using System.Configuration;
 using System.Collections.Specialized;
+using NPOI.HSSF.UserModel;
 
 //NOTE: Cell widths/height are not kept when copying!
 //NOTE: Workbook-sheets are merged in the listed order.
@@ -134,24 +134,31 @@ namespace iServerToServiceNowExchanger
             {
                 string dir = Path.GetDirectoryName(filepath) + @"\";
                 string file = Path.GetFileNameWithoutExtension(filepath); //Optional filename will be used as prefix
-
+                 
                 if (downloadService.ToLower().Equals("servicenow"))
                 {
                     Log.Info("Download from ServiceNow to {0}", filepath);
-                    var workbookMerged = new Workbook();
+                    var workbookMerged = new HSSFWorkbook();
                     foreach (var keyname in appSettings.AllKeys.Where(x => x.StartsWith("serviceNowDownloadURL")))
                     {
                         var sheetname = keyname.Substring("serviceNowDownloadURL".Length);
                         var downloadpath = dir + file + sheetname + ".xls";
                         downloadAndRotate(appSettings[keyname], downloadpath, proxy);
-                        
+
                         // Add worksheets to the merged workbook
-                        foreach(var sheet in Workbook.Load(downloadpath).Worksheets) {
-                            sheet.Name = sheetname;// +"_" + sheet.Name;
-                            workbookMerged.Worksheets.Add(sheet);
+                        HSSFWorkbook sourcewb = new HSSFWorkbook(new FileStream(downloadpath, FileMode.Open));
+                        for (int i = 0; i < sourcewb.NumberOfSheets; i++)
+                        {
+                            HSSFSheet sourcesheet = sourcewb.GetSheetAt(i) as HSSFSheet;
+                            sourcesheet.CopyTo(workbookMerged, sourcesheet.SheetName, true, true);
                         }
                     }
-                    workbookMerged.Save(dir + file + "Merged" + ".xls");
+
+                    // Save new merged workbook to disk
+                    using (var wbfile = new FileStream(dir + file + "Merged" + ".xls", FileMode.Create, FileAccess.ReadWrite))
+                    {
+                        workbookMerged.Write(wbfile);
+                    }
                 }
                 else
                 {
@@ -165,23 +172,29 @@ namespace iServerToServiceNowExchanger
                 if (uploadService.ToLower().Equals("servicenow"))
                 {
                     var uploadordernames = appSettings["serviceNowUploadOrder"].Split(',').ToList<String>();
-                    var worksheets = Workbook.Load(filepath).Worksheets;
-                    if (uploadordernames.Count < worksheets.Count)
+                    HSSFWorkbook sourcewb = new HSSFWorkbook(new FileStream(filepath, FileMode.Open));
+
+                    if (uploadordernames.Count < sourcewb.NumberOfSheets)
                     {
                         Log.Error("Number of serviceNowUploadSheetOrder item is smaller than actual sheets in file: {0} < {1}");
                         return 255;
                     }
 
-                    foreach (var sheet in worksheets)
+                    for (int i = 0; i < sourcewb.NumberOfSheets; i++)
                     {
-                        var workbook = new Workbook();
-                        workbook.Worksheets.Add(sheet);
+                        var workbook = new HSSFWorkbook();
+                        HSSFSheet sourcesheet = sourcewb.GetSheetAt(i) as HSSFSheet;
+                        sourcesheet.CopyTo(workbook, sourcesheet.SheetName, true, true);
                         var uploadname = uploadordernames[0];
                         uploadordernames.RemoveAt(0);
                         if (appSettings["serviceNowUploadURL" + uploadname] != null)
                         {
-                            var tmpfile = Path.GetTempFileName();
-                            workbook.Save(tmpfile);
+                            var tmpfile = Path.GetTempFileName() + ".xls";
+                            using (var file = new FileStream(tmpfile, FileMode.Create, FileAccess.ReadWrite))
+                            {
+                                workbook.Write(file);
+                            }
+                            
                             if (!fileUpload(appSettings["serviceNowUploadURL" + uploadname], tmpfile, proxy))
                             {
                                 return 255;
@@ -225,36 +238,6 @@ namespace iServerToServiceNowExchanger
             Console.WriteLine(" Upload file to service");
             Console.WriteLine(" -u <servicenow/iserver> -f <from file>");
             Console.WriteLine();
-        }
-
-        static List<Workbook> workbookSplit(Workbook workbook)
-        {
-            List<Workbook> workbookList = new List<Workbook>();
-
-            foreach (Worksheet sheet in workbook.Worksheets)
-            {
-                var workbookSheet = new Workbook();
-                workbookSheet.Worksheets.Add(sheet);
-                workbookList.Add(workbookSheet);
-            }
-
-            return workbookList;
-        }
-
-        static Workbook workbookMerge(List<Workbook> workbookList)
-        {
-            Workbook workbookMerged = new Workbook();
-
-            //If two sheets have same name, a "_2 ... _n" postfix will be added.
-            foreach (Workbook workbook in workbookList)
-            {
-                foreach (Worksheet sheet in workbook.Worksheets)
-                {
-                    workbookMerged.Worksheets.Add(sheet);
-                }
-            }
-
-            return workbookMerged;
         }
 
         public static bool fileUpload(string url, string filepath, WebProxy wp = null)
