@@ -186,7 +186,10 @@ namespace iServerToServiceNowExchanger
                             {
                                 return 255;
                             }
-                            removeFile(tmpfile);
+                            if (logLevel < 4)
+                            {
+                                removeFile(tmpfile);
+                            }
                         }
                         else
                         {
@@ -282,9 +285,11 @@ namespace iServerToServiceNowExchanger
                 {
                     if (File.Exists(filepath))
                     {
-                        Log.Trace("Uploading {0} {1}", uploadurl.ToString(), filepath);
+                        var fileinfo = new FileInfo(filepath);
+
+                        Log.Trace("Uploading {0} {1}({2})", uploadurl.ToString(), filepath, fileinfo.Length);
                         var result = client.UploadFile(uploadurl, filepath);
-                        Log.Trace("Uploaded {0} {1}", uploadurl.ToString(), filepath);
+                        Log.Trace("Finished uploading({0}):\n{1}\n", result.Length, Encoding.UTF8.GetString(result));
                         return true;
                     }
                     else
