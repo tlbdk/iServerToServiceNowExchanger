@@ -150,7 +150,7 @@ namespace iServerToServiceNowExchanger
                         for (int i = 0; i < sourcewb.NumberOfSheets; i++)
                         {
                             HSSFSheet sourcesheet = sourcewb.GetSheetAt(i) as HSSFSheet;
-                            sourcesheet.CopyTo(workbookMerged, sourcesheet.SheetName, true, true);
+                            sourcesheet.CopyTo(workbookMerged, sheetname, true, true);
                         }
                     }
 
